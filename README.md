@@ -12,7 +12,7 @@
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
 ![License](https://img.shields.io/badge/license-MIT-3fb950)
 
-> 测试徽章是跑出来的，不是写上去的——点进去能看到 110 个用例在 Windows / Linux × Python 3.11 / 3.12 / 3.13 上的实际结果。
+> 测试徽章是跑出来的，不是写上去的——点进去能看到 111 个用例在 Windows / Linux × Python 3.11 / 3.12 / 3.13 上的实际结果。
 
 ---
 
@@ -318,7 +318,7 @@ app/
   storage.py               # SQLite 持久层（快照 / 评分 / 闸门 / 决策审计）
   obsidian_config.py       # 从 Obsidian 库同步策略规则
   static/                  # 前端：原生 JS + CSS，无构建步骤
-tests/                     # 110 个用例（必须用 pytest 跑）
+tests/                     # 111 个用例（必须用 pytest 跑）
 docs/
   architecture.svg         # 系统架构图
   screenshots/             # README 各板块截图
@@ -336,17 +336,24 @@ LICENSE                    # MIT
 python -m pytest -q
 ```
 
-套件共 **110 个用例**，覆盖数据源适配与降级、规则库评分、四套主打打法、存储层与定时任务。测试全部离线——假数据源会禁用海外指数、ETF 和基金持仓等外部补充请求，既不吃行情额度，也不会因限流卡住。
+套件共 **111 个用例**，覆盖数据源适配与降级、规则库评分、四套打法、存储层与定时任务。测试全部离线——假数据源会禁用海外指数、ETF 和基金持仓等外部补充请求，既不吃行情额度，也不会因限流卡住。
 
 > ⚠️ **别用 `python -m unittest discover`。** 套件里有 37 个是模块级测试函数，unittest 不收集它们，
 > 只会跑 73 个然后报 `OK`——看起来全绿，实际漏掉了三分之一。这是本项目自己踩过的坑，
 > 写在这里免得下一个人再踩一次。
 
-CI 在 **Windows + Linux × Python 3.11 / 3.12 / 3.13** 六个组合上跑同一套用例，配置见 [`.github/workflows/tests.yml`](.github/workflows/tests.yml)。
+CI 在 **Windows + Linux × Python 3.11 / 3.12 / 3.13** 六个组合上跑同一套用例。
+
+> **时区是这类缺陷的高发区。** 开发机在 UTC+8、runner 默认在 UTC，依赖系统时区的代码会正好从两者之间漏过去——
+> 本地碰巧成立，推到 CI 才炸。这个项目踩过一次：`news_feed._parse_time` 用了无参 `astimezone()`，
+> 结果跟随机器时区、而不是传入的参照时间，在 UTC+8 上永远测不出来。
+
+配置见 [`.github/workflows/tests.yml`](.github/workflows/tests.yml)。
 
 ## 口径说明
 
 - **红色表示上涨、绿色表示下跌**，符合 A 股界面习惯
+- **机器时钟需为北京时间（UTC+8）。** 定时任务读的是本机壁钟时间——09:26 扫描、15:01 复盘这些都是按北京时间的交易时段写死的。机器时区不是 UTC+8 时，任务会按本机时间触发，和 A 股交易时段错位（例如系统为 UTC 时，"09:26" 实际落在北京时间 17:26）
 - 回测总涨跌：`(当日收盘 − 当日开盘) / 当日开盘 × 100%`
 - 命中仅统计**实际推送记录**，校准样例不会伪装成实时业绩
 - 7 日最佳以推荐日开盘为基准，取随后最多 7 个交易日的最高价
@@ -374,7 +381,7 @@ CI 在 **Windows + Linux × Python 3.11 / 3.12 / 3.13** 六个组合上跑同一
 
 1. 搜一下现有 issue，避免重复
 2. **删掉敏感信息**——券商名称、资金账号、Webhook Token、含用户名的本机绝对路径。这些一旦进入提交历史，清理成本远高于提交前检查
-3. 跑一遍测试：`python -m pytest -q`（110 个用例，别用 unittest，原因见[测试](#测试)）
+3. 跑一遍测试：`python -m pytest -q`（111 个用例，别用 unittest，原因见[测试](#测试)）
 
 提功能建议时请先讲**场景和痛点**，再谈方案。
 

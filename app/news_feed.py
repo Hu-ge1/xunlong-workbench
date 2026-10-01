@@ -33,14 +33,21 @@ def _clean(value: Any, limit: int | None = None) -> str:
 
 
 def _parse_time(value: Any, now: datetime) -> datetime:
-    """Normalize common JSON/HTML news timestamps to local-aware datetime."""
+    """Normalize common JSON/HTML news timestamps to an aware datetime.
+
+    输出统一落在 ``now`` 所在时区——**不跟随进程的系统时区**。系统时区取决于运行
+    环境（CI runner 是 UTC，用户机器可能是任意值），一旦依赖它，同样的输入在不同
+    机器上会解析出不同的时刻，而且开发机碰巧对得上时根本发现不了。
+    """
+
+    reference = now.tzinfo or timezone.utc
 
     if isinstance(value, (int, float)):
         timestamp = float(value)
         if timestamp > 10_000_000_000:
             timestamp /= 1000
         try:
-            return datetime.fromtimestamp(timestamp, tz=timezone.utc).astimezone()
+            return datetime.fromtimestamp(timestamp, tz=timezone.utc).astimezone(reference)
         except (OverflowError, OSError, ValueError):
             return now
     text = str(value or "").strip()
@@ -64,17 +71,17 @@ def _parse_time(value: Any, now: datetime) -> datetime:
             parsed = datetime.fromisoformat(candidate)
             if parsed.tzinfo is None:
                 # Sina/THS return local Beijing time without an offset. Treat
-                # naive timestamps as the machine's local timezone instead of
-                # UTC, otherwise every item is shifted eight hours forward.
-                parsed = parsed.replace(tzinfo=now.tzinfo or timezone.utc)
-            return parsed.astimezone()
+                # naive timestamps as the reference timezone instead of UTC,
+                # otherwise every item is shifted eight hours forward.
+                parsed = parsed.replace(tzinfo=reference)
+            return parsed.astimezone(reference)
         except ValueError:
             pass
     try:
         parsed = parsedate_to_datetime(text)
         if parsed.tzinfo is None:
             parsed = parsed.replace(tzinfo=timezone.utc)
-        return parsed.astimezone()
+        return parsed.astimezone(reference)
     except (TypeError, ValueError, IndexError):
         pass
     for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%m-%d %H:%M"):
@@ -84,7 +91,7 @@ def _parse_time(value: Any, now: datetime) -> datetime:
                 parsed = parsed.replace(year=now.year)
                 if parsed > now + timedelta(days=1):
                     parsed = parsed.replace(year=now.year - 1)
-            return parsed.replace(tzinfo=now.tzinfo)
+            return parsed.replace(tzinfo=reference)
         except ValueError:
             pass
     return now
