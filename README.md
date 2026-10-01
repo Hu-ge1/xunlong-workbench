@@ -1,15 +1,18 @@
-﻿# 寻龙工作台
+# 寻龙工作台
 
 > **一个可解释、可回测、可校准的 A 股研究系统。**
 >
 > 它不做「AI 选股神器」那一套。每一分评分都能点开看依据，每一次降级都会标出来源，
 > 每一条推送都留了审计记录——**你可以不同意它的结论，但你能查到它是怎么得出的。**
 
-![Python](https://img.shields.io/badge/Python-3.11-3776ab)
-![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688)
+![tests](https://github.com/Hu-ge1/xunlong-workbench/actions/workflows/tests.yml/badge.svg)
+![Python](https://img.shields.io/badge/Python-3.11%2B-3776ab)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688)
 ![SQLite](https://img.shields.io/badge/SQLite-WAL-003b57)
-![Tests](https://img.shields.io/badge/tests-110%20passed-3fb950)
 ![Platform](https://img.shields.io/badge/platform-Windows-0078d4)
+![License](https://img.shields.io/badge/license-MIT-3fb950)
+
+> 测试徽章是跑出来的，不是写上去的——点进去能看到 110 个用例在 Windows / Linux × Python 3.11 / 3.12 / 3.13 上的实际结果。
 
 ---
 
@@ -26,6 +29,14 @@
 - 评分 → 拆成 MA5 / KDJ / MACD / MA10 四项证据卡片，写明判定条件与扣分理由，盖上规则库版本号
 - 行情 → 每条数据带**来源、交易日、时间、有效状态**四个字段，旧日期快照不会冒充当日竞价
 - 决策 → 数据快照、评分拆解、闸门结果、策略版本、最终结论全部落 SQLite，事后可复盘当时到底看到了什么
+
+## 一张图看懂
+
+![系统架构](docs/architecture.svg)
+
+四层各管一件事：**数据源层**负责拿得到，**适配层**负责把「拿到的是什么」说清楚，**策略层**负责怎么算，**审计层**负责算完留证。右侧那条虚线是审计闭环——回测和参数校准都从审计记录回到策略层，而不是拍脑袋改参数。
+
+图里的 `providers.py` / `scoring.py` / `services.py` 都是仓库里的真实模块，展开见[项目结构](#项目结构)。
 
 ---
 
@@ -307,17 +318,31 @@ app/
   storage.py               # SQLite 持久层（快照 / 评分 / 闸门 / 决策审计）
   obsidian_config.py       # 从 Obsidian 库同步策略规则
   static/                  # 前端：原生 JS + CSS，无构建步骤
-tests/                     # 110 个测试函数
-docs/screenshots/          # README 截图
+tests/                     # 110 个用例（必须用 pytest 跑）
+docs/
+  architecture.svg         # 系统架构图
+  screenshots/             # README 各板块截图
+.github/workflows/tests.yml # CI：6 个平台 × 版本组合
+requirements.txt           # 运行依赖
+requirements-dev.txt       # 测试依赖（pytest）
+LICENSE                    # MIT
 ```
 
 ## 测试
 
+先用 `pip install -r requirements-dev.txt` 装上测试依赖，然后：
+
 ```bash
-python -m unittest discover -s tests -v
+python -m pytest -q
 ```
 
-测试使用假数据源时会自动禁用海外指数、ETF 和基金持仓等外部补充请求，避免消耗行情额度或因限流卡住。
+套件共 **110 个用例**，覆盖数据源适配与降级、规则库评分、四套主打打法、存储层与定时任务。测试全部离线——假数据源会禁用海外指数、ETF 和基金持仓等外部补充请求，既不吃行情额度，也不会因限流卡住。
+
+> ⚠️ **别用 `python -m unittest discover`。** 套件里有 37 个是模块级测试函数，unittest 不收集它们，
+> 只会跑 73 个然后报 `OK`——看起来全绿，实际漏掉了三分之一。这是本项目自己踩过的坑，
+> 写在这里免得下一个人再踩一次。
+
+CI 在 **Windows + Linux × Python 3.11 / 3.12 / 3.13** 六个组合上跑同一套用例，配置见 [`.github/workflows/tests.yml`](.github/workflows/tests.yml)。
 
 ## 口径说明
 
@@ -349,10 +374,16 @@ python -m unittest discover -s tests -v
 
 1. 搜一下现有 issue，避免重复
 2. **删掉敏感信息**——券商名称、资金账号、Webhook Token、含用户名的本机绝对路径。这些一旦进入提交历史，清理成本远高于提交前检查
-3. 跑一遍测试：`python -m unittest discover -s tests -v`
+3. 跑一遍测试：`python -m pytest -q`（110 个用例，别用 unittest，原因见[测试](#测试)）
 
 提功能建议时请先讲**场景和痛点**，再谈方案。
 
 ## 风险提示
 
 本系统仅用于**研究和软件验证**，所有输出**不构成任何投资建议**。行情接口可能延迟、缺失或调整；自动化输出必须由使用者自行核验。策略历史回测不代表未来收益，投资决策与风险由使用者自行承担。
+
+## 许可证
+
+基于 [MIT License](LICENSE) 开源。你可以自由使用、修改、分发甚至商用，只需保留版权声明。
+
+需要说明的是：许可证覆盖的是**代码**。系统拉取的行情、财务与新闻数据版权归各数据源所有，二次分发前请自行确认对方条款；基于本系统做出的任何投资决策，责任由使用者承担。

@@ -1,0 +1,55 @@
+name: tests
+
+# 这个工作流的意义不只是「跑一下测试」，而是让 README 顶部的测试徽章可核对：
+# 任何人点开 Actions 就能看到 110 个用例在什么平台上真实跑过。
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pytest:
+    name: ${{ matrix.os }} · Python ${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # 一个平台失败不代表其它平台也失败，全部跑完再看结论。
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+        python: ["3.11", "3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Python ${{ matrix.python }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: 打印环境
+        run: |
+          python --version
+          python -c "import platform; print(platform.platform())"
+
+      # 必须用 pytest：套件里有 37 个模块级测试函数，
+      # `python -m unittest discover` 只会收集到 73 个，静默漏跑。
+      # 这里的命令必须与 README「测试」一节写的完全一致。
+      - name: 运行全部测试
+        run: python -m pytest -q

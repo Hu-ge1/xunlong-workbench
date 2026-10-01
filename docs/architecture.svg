@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="910" viewBox="0 0 1240 910" role="img" aria-label="寻龙工作台系统架构：数据源层、适配与降级层、业务编排与策略层、审计与触达层，以及审计闭环回路">
+  <rect x="0" y="0" width="1240" height="910" fill="#ffffff"/>
+  <g font-family="'Segoe UI','Microsoft YaHei','PingFang SC','Hiragino Sans GB',system-ui,sans-serif">
+
+    <!-- 标题 -->
+    <text x="24" y="42" font-size="20" font-weight="700" fill="#0f172a">寻龙工作台 · 系统架构</text>
+    <text x="1140" y="42" font-size="13" fill="#64748b" text-anchor="end">数据 → 适配 → 策略 → 审计，每一环都留下可核对的痕迹</text>
+    <line x1="20" y1="62" x2="1140" y2="62" stroke="#e2e8f0" stroke-width="1"/>
+
+    <!-- ============ ① 数据源层 ============ -->
+    <rect x="20" y="76" width="1120" height="250" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="44" y="109" font-size="16" font-weight="700" fill="#334155">① 数据源层</text>
+    <text x="1116" y="109" font-size="13" fill="#64748b" text-anchor="end">每条数据带 来源 / 交易日 / 时间 / 有效状态</text>
+
+    <!-- A1-1 FFD 全市场增强日线（主源） -->
+    <rect x="44" y="126" width="253" height="104" rx="10" fill="#eff6ff" stroke="#93c5fd"/>
+    <text x="64" y="153" font-size="15" font-weight="600" fill="#1e3a8a">FFD 全市场增强日线</text>
+    <rect x="237" y="139" width="44" height="19" rx="9" fill="#dbeafe" stroke="#93c5fd"/>
+    <text x="259" y="153" font-size="11" fill="#1d4ed8" text-anchor="middle">主源</text>
+    <text x="64" y="178" font-size="13" fill="#475569">股票池 · 行情 · 量比</text>
+    <text x="64" y="198" font-size="13" fill="#475569">换手率 · 流通市值 · 均线</text>
+    <text x="64" y="218" font-size="13" fill="#475569">全市场快照与市场宽度</text>
+
+    <!-- A1-2 FFD 批量行情 -->
+    <rect x="317" y="126" width="253" height="104" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="337" y="153" font-size="15" font-weight="600" fill="#0f172a">FFD 批量行情</text>
+    <text x="337" y="178" font-size="13" fill="#64748b">个股 / 指数实时快照</text>
+    <text x="337" y="198" font-size="13" fill="#64748b">批量历史 K 线</text>
+    <text x="337" y="218" font-size="13" fill="#64748b">一次取一批，不逐股拉</text>
+
+    <!-- A1-3 FFD 专项数据 -->
+    <rect x="590" y="126" width="253" height="104" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="610" y="153" font-size="15" font-weight="600" fill="#0f172a">FFD 专项数据</text>
+    <text x="610" y="178" font-size="13" fill="#64748b">09:25 竞价终态 · 涨停池</text>
+    <text x="610" y="198" font-size="13" fill="#64748b">公告 · 财务指标</text>
+    <text x="610" y="218" font-size="13" fill="#64748b">新闻与事件流</text>
+
+    <!-- A1-4 QMT 本地桥接 -->
+    <rect x="863" y="126" width="253" height="104" rx="10" fill="#f0fdfa" stroke="#5eead4"/>
+    <text x="883" y="153" font-size="15" font-weight="600" fill="#115e59">QMT 本地桥接（只读）</text>
+    <text x="883" y="178" font-size="13" fill="#0f766e">交易所直连，无调用限额</text>
+    <text x="883" y="198" font-size="13" fill="#0f766e">客户端离线自动落回主链路</text>
+    <text x="883" y="218" font-size="13" fill="#0f766e">不接交易接口，只看行情</text>
+
+    <!-- A2 降级回退 -->
+    <text x="44" y="256" font-size="13" fill="#b45309">降级回退 —— 仅在主源给不出精确交易日或字段时启用，且必须打上标记</text>
+    <rect x="44" y="266" width="200" height="44" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+    <text x="144" y="293" font-size="13.5" fill="#92400e" text-anchor="middle">本地通达信</text>
+    <rect x="262" y="266" width="200" height="44" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+    <text x="362" y="293" font-size="13.5" fill="#92400e" text-anchor="middle">腾讯行情</text>
+    <rect x="480" y="266" width="200" height="44" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+    <text x="580" y="293" font-size="13.5" fill="#92400e" text-anchor="middle">新浪财经</text>
+    <rect x="698" y="266" width="200" height="44" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+    <text x="798" y="293" font-size="13.5" fill="#92400e" text-anchor="middle">东方财富</text>
+    <rect x="916" y="266" width="200" height="44" rx="9" fill="#fffbeb" stroke="#fcd34d"/>
+    <text x="1016" y="293" font-size="13.5" fill="#92400e" text-anchor="middle">巨潮资讯</text>
+
+    <!-- 箭头 A → B -->
+    <line x1="560" y1="332" x2="560" y2="366" stroke="#94a3b8" stroke-width="1.5"/>
+    <polygon points="560,374 554,362 566,362" fill="#94a3b8"/>
+    <text x="584" y="358" font-size="13" fill="#b45309">降级必须是显式动作：用什么就用什么，但用的是什么必须写清楚</text>
+
+    <!-- ============ ② 适配与降级层 ============ -->
+    <rect x="20" y="378" width="1120" height="120" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="44" y="411" font-size="16" font-weight="700" fill="#334155">② 适配与降级层 · providers.py</text>
+
+    <rect x="44" y="428" width="253" height="54" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="64" y="453" font-size="14.5" font-weight="600" fill="#0f172a">分层取数</text>
+    <text x="64" y="473" font-size="12.5" fill="#64748b">主源优先，逐级回退</text>
+
+    <rect x="317" y="428" width="253" height="54" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="337" y="453" font-size="14.5" font-weight="600" fill="#0f172a">来源标记</text>
+    <text x="337" y="473" font-size="12.5" fill="#64748b">来源 · 交易日 · 有效状态</text>
+
+    <rect x="590" y="428" width="253" height="54" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="610" y="453" font-size="14.5" font-weight="600" fill="#0f172a">TTL 缓存 + 限流</text>
+    <text x="610" y="473" font-size="12.5" fill="#64748b">不重复请求，不触发对方限额</text>
+
+    <rect x="863" y="428" width="253" height="54" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="883" y="453" font-size="14.5" font-weight="600" fill="#0f172a">跨进程文件锁</text>
+    <text x="883" y="473" font-size="12.5" fill="#64748b">非 Windows 环境自动跳过</text>
+
+    <!-- 箭头 B → C -->
+    <line x1="560" y1="504" x2="560" y2="538" stroke="#94a3b8" stroke-width="1.5"/>
+    <polygon points="560,546 554,534 566,534" fill="#94a3b8"/>
+    <text x="584" y="530" font-size="13" fill="#64748b">编排层拿到的不是裸值，而是带来源与有效性标记的数据</text>
+
+    <!-- ============ ③ 业务编排与策略层 ============ -->
+    <rect x="20" y="550" width="1120" height="140" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="44" y="583" font-size="16" font-weight="700" fill="#334155">③ 业务编排与策略层</text>
+
+    <rect x="44" y="600" width="253" height="74" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="64" y="625" font-size="14.5" font-weight="600" fill="#0f172a">scoring.py · 规则库评分</text>
+    <text x="64" y="647" font-size="12.5" fill="#64748b">MA5 / KDJ / MACD / MA10</text>
+    <text x="64" y="665" font-size="12.5" fill="#64748b">每一分都能点开看依据</text>
+
+    <rect x="317" y="600" width="253" height="74" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="337" y="625" font-size="14.5" font-weight="600" fill="#0f172a">strategies.py · 7 套检测器</text>
+    <text x="337" y="647" font-size="12.5" fill="#64748b">放量上涨 · 均线多头 · 停机坪</text>
+    <text x="337" y="665" font-size="12.5" fill="#64748b">突破平台 · 海龟 · 回踩年线 · 无回撤</text>
+
+    <rect x="590" y="600" width="253" height="74" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="610" y="625" font-size="14.5" font-weight="600" fill="#0f172a">四套策略模块</text>
+    <text x="610" y="647" font-size="12" fill="#64748b">oversold / dixi / maifu / yijiner</text>
+    <text x="610" y="665" font-size="12.5" fill="#64748b">超跌反弹 · 低吸 · 埋伏 · 一进二</text>
+
+    <rect x="863" y="600" width="253" height="74" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="883" y="625" font-size="14.5" font-weight="600" fill="#0f172a">services.py · 编排与闸门</text>
+    <text x="883" y="647" font-size="12.5" fill="#64748b">扫描 → 闸门 → 推送 → 复盘</text>
+    <text x="883" y="665" font-size="12.5" fill="#64748b">只做沪深主板，ST 与停牌排除</text>
+
+    <!-- 箭头 C → D -->
+    <line x1="560" y1="696" x2="560" y2="730" stroke="#94a3b8" stroke-width="1.5"/>
+    <polygon points="560,738 554,726 566,726" fill="#94a3b8"/>
+    <text x="584" y="722" font-size="13" fill="#64748b">每次决策把数据快照、评分拆解、闸门结果、策略版本一并落库</text>
+
+    <!-- ============ ④ 审计与触达层 ============ -->
+    <rect x="20" y="742" width="1120" height="140" rx="14" fill="#f8fafc" stroke="#e2e8f0"/>
+    <text x="44" y="775" font-size="16" font-weight="700" fill="#334155">④ 审计与触达层</text>
+
+    <rect x="44" y="792" width="253" height="74" rx="10" fill="#faf5ff" stroke="#d8b4fe"/>
+    <text x="64" y="817" font-size="14.5" font-weight="600" fill="#6b21a8">SQLite 审计</text>
+    <text x="64" y="839" font-size="12.5" fill="#7e22ce">快照 · 评分 · 闸门 · 版本</text>
+    <text x="64" y="857" font-size="12.5" fill="#7e22ce">完整留痕，可事后复盘</text>
+
+    <rect x="317" y="792" width="253" height="74" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="337" y="817" font-size="14.5" font-weight="600" fill="#0f172a">Web 工作台</text>
+    <text x="337" y="839" font-size="12.5" fill="#64748b">13 个功能视图 + 1 个独立页面</text>
+    <text x="337" y="857" font-size="12.5" fill="#64748b">原生 JS + CSS，无构建步骤</text>
+
+    <rect x="590" y="792" width="253" height="74" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="610" y="817" font-size="14.5" font-weight="600" fill="#0f172a">企业微信推送</text>
+    <text x="610" y="839" font-size="12.5" fill="#64748b">09:28 定时投递当日候选</text>
+    <text x="610" y="857" font-size="12.5" fill="#64748b">机器人命令面板可回查</text>
+
+    <rect x="863" y="792" width="253" height="74" rx="10" fill="#ffffff" stroke="#cbd5e1"/>
+    <text x="883" y="817" font-size="14.5" font-weight="600" fill="#0f172a">MCP Server · 定时任务</text>
+    <text x="883" y="839" font-size="12.5" fill="#64748b">把工作台能力暴露给外部智能体</text>
+    <text x="883" y="857" font-size="12.5" fill="#64748b">7 个定时任务，运行状态可见</text>
+
+    <!-- 审计闭环 -->
+    <path d="M 1140 846 H 1172 V 616 H 1158" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <polygon points="1144,616 1158,610 1158,622" fill="#a855f7"/>
+    <text x="1196" y="730" transform="rotate(90 1196 730)" font-size="13" fill="#7e22ce" text-anchor="middle">审计闭环 · 决策可回溯，参数可校准</text>
+
+  </g>
+</svg>

@@ -1,0 +1,6 @@
+# 开发与测试依赖。运行工作台本身不需要这些，详见 requirements.txt。
+-r requirements.txt
+
+# 测试运行器。注意：套件里有 37 个模块级测试函数，unittest 不会收集它们，
+# 必须用 pytest 才能跑到全部 110 个用例。
+pytest>=8.0,<9
