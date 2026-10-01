@@ -1,0 +1,6 @@
+fastapi>=0.110,<1
+uvicorn>=0.29,<1
+requests>=2.31,<3
+pandas>=2.0,<3
+mootdx>=0.11,<1
+

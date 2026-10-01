@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta name="theme-color" content="#155eef">
+  <title>寻龙工作台</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23155eef'/%3E%3Ccircle cx='32' cy='32' r='20' fill='none' stroke='white' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='10' fill='none' stroke='white' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='3' fill='white'/%3E%3C/svg%3E">
+  <script>
+    // This UI needs its local API. Opening index.html directly would leave it
+    // unstyled and disconnected, so send accidental file opens to the server.
+    if (window.location.protocol === "file:") {
+      window.location.replace("http://127.0.0.1:8765/");
+    }
+  </script>
+  <link rel="stylesheet" href="/static/styles.css?v=20260912">
+  <script defer src="/static/vendor/lucide.min.js?v=20260718.6"></script>
+  <script defer src="/static/app.js?v=20260912"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <div class="sidebar-backdrop" id="sidebar-backdrop" hidden></div>
+    <aside class="sidebar" id="sidebar" aria-label="主导航">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"><i data-lucide="radar"></i></span>
+        <span>
+          <strong>寻龙工作台</strong>
+          <small>A 股策略研究</small>
+        </span>
+        <button class="icon-button sidebar-close" id="sidebar-close" type="button" aria-label="关闭导航" data-tooltip="关闭导航">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+
+      <nav class="side-nav" aria-label="工作台页面">
+        <button class="nav-item active" type="button" data-view="overview">
+          <i data-lucide="layout-dashboard"></i><span>总览</span>
+        </button>
+        <button class="nav-item" type="button" data-view="intel"><i data-lucide="newspaper"></i><span>&#x65B0;&#x95FB;&#x4E0E;&#x677F;&#x5757;</span></button>
+        <button class="nav-item" type="button" data-view="overnight"><i data-lucide="notebook-tabs"></i><span>自选研究池</span></button>
+        <button class="nav-item" type="button" data-view="screener">
+          <i data-lucide="list-filter"></i><span>主板策略选股</span>
+        </button>
+        <button class="nav-item" type="button" data-view="oversold">
+          <i data-lucide="rotate-ccw"></i><span>超跌反弹</span>
+        </button>
+        <button class="nav-item" type="button" data-view="yijiner">
+          <i data-lucide="zap"></i><span>一进二</span>
+        </button>
+        <button class="nav-item" type="button" data-view="dixi">
+          <i data-lucide="anchor"></i><span>低吸计划</span>
+        </button>
+        <button class="nav-item" type="button" data-view="maifu">
+          <i data-lucide="calendar-clock"></i><span>埋伏日历</span>
+        </button>
+        <button class="nav-item" type="button" data-view="stock">
+          <i data-lucide="candlestick-chart"></i><span>个股分析</span>
+        </button>
+        <button class="nav-item" type="button" data-view="review">
+          <i data-lucide="clipboard-check"></i><span>每日复盘</span>
+        </button>
+        <button class="nav-item" type="button" data-view="backtest">
+          <i data-lucide="history"></i><span>策略回测</span>
+        </button>
+        <button class="nav-item" type="button" data-view="automation">
+          <i data-lucide="workflow"></i><span>自动化</span>
+        </button>
+        <a class="nav-item" href="/static/auction.html" target="_blank" rel="noopener" data-tooltip="独立页面：一进二分档抓股 + 实战复盘">
+          <i data-lucide="crosshair"></i><span>竞价抓股台</span>
+        </a>
+        <button class="nav-item" type="button" data-view="settings">
+          <i data-lucide="settings-2"></i><span>设置</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <span class="status-dot" id="sidebar-health-dot"></span>
+        <span><strong id="sidebar-health">数据服务检测中</strong><small id="sidebar-health-detail">等待首次响应</small></span>
+      </div>
+    </aside>
+
+    <main class="main-shell">
+      <header class="topbar">
+        <button class="icon-button menu-button" id="menu-button" type="button" aria-label="打开导航" data-tooltip="打开导航">
+          <i data-lucide="menu"></i>
+        </button>
+        <form class="global-search" id="global-search" role="search">
+          <i data-lucide="search" aria-hidden="true"></i>
+          <input id="global-stock-code" name="code" inputmode="numeric" autocomplete="off" maxlength="6" pattern="\d{6}" placeholder="输入6位股票代码" aria-label="按6位代码搜索股票">
+          <kbd>Enter</kbd>
+        </form>
+        <div class="topbar-actions">
+          <span class="trading-chip" id="trading-chip"><span class="status-dot"></span><span>状态检测中</span></span>
+          <span class="data-source-chip" id="data-source-chip" data-tooltip="等待市场数据来源"><i data-lucide="database" aria-hidden="true"></i><span>数据源检测中</span></span>
+          <span class="updated-at" id="updated-at">数据尚未刷新</span>
+          <button class="icon-button" id="refresh-button" type="button" aria-label="刷新当前页面" data-tooltip="刷新当前页面">
+            <i data-lucide="refresh-cw"></i>
+          </button>
+        </div>
+      </header>
+
+      <section class="market-strip" id="market-strip" aria-label="主要指数">
+        <div class="market-strip-placeholder">正在连接市场数据...</div>
+      </section>
+
+      <div class="content-shell">
+        <section class="view-page active" id="view-overview" data-view-page="overview" aria-labelledby="overview-title">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">今日运行概览</p>
+              <h1 id="overview-title">策略总览</h1>
+              <p class="page-subtitle" id="overview-subtitle">汇总规则库综合、事件确认和消息投递状态</p>
+            </div>
+            <div class="page-actions">
+              <label class="compact-field"><span>交易日</span><input type="date" id="overview-date"></label>
+              <button class="button primary" id="overview-run" type="button"><i data-lucide="play"></i><span>运行选股</span></button>
+            </div>
+          </div>
+
+          <div class="metric-grid" id="overview-metrics" aria-live="polite"></div>
+
+          <section class="panel funnel-panel" aria-labelledby="funnel-title">
+            <div class="panel-header">
+              <div><p class="panel-kicker">规则库事件确认任务</p><h2 id="funnel-title">沪深主板筛选漏斗</h2></div>
+              <span class="panel-meta" id="funnel-meta">等待运行数据</span>
+            </div>
+            <div class="funnel" id="overview-funnel"></div>
+          </section>
+
+          <div class="overview-grid">
+            <section class="panel span-8" aria-labelledby="overview-candidates-title">
+              <div class="panel-header">
+                <div><p class="panel-kicker">实时结果</p><h2 id="overview-candidates-title">候选与推送</h2></div>
+                <button class="button secondary compact" type="button" data-nav-target="screener"><i data-lucide="arrow-up-right"></i><span>查看全部</span></button>
+              </div>
+              <div class="table-wrap" id="overview-candidates"></div>
+            </section>
+
+            <section class="panel span-4" aria-labelledby="today-message-title">
+              <div class="panel-header">
+                <div><p class="panel-kicker">企业微信预览</p><h2 id="today-message-title">今日推送</h2></div>
+                <span class="status-badge neutral" id="message-channel-status">未发送</span>
+              </div>
+              <div id="overview-message"></div>
+            </section>
+
+            <section class="panel span-7" aria-labelledby="breadth-title">
+              <div class="panel-header">
+                <div><p class="panel-kicker">市场温度</p><h2 id="breadth-title">涨跌与板块分布</h2></div>
+                <span class="panel-meta" id="breadth-meta">--</span>
+              </div>
+              <div id="market-breadth"></div>
+            </section>
+
+            <section class="panel span-5" aria-labelledby="runtime-title">
+              <div class="panel-header">
+                <div><p class="panel-kicker">运行监控</p><h2 id="runtime-title">任务与数据源</h2></div>
+                <button class="icon-button" type="button" data-nav-target="automation" aria-label="打开自动化" data-tooltip="打开自动化"><i data-lucide="arrow-up-right"></i></button>
+              </div>
+              <div class="runtime-list" id="overview-runtime"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-page" id="view-intel" data-view-page="intel" aria-labelledby="intel-title">
+          <div class="page-header"><div><p class="eyebrow">FFD &#x8D44;&#x8BAF;&#x4E0E;&#x677F;&#x5757;&#x8DDF;&#x8E2A;</p><h1 id="intel-title">&#x65B0;&#x95FB;&#x4E0E;&#x677F;&#x5757;&#x8F6E;&#x52A8;</h1><p class="page-subtitle">&#x4E8B;&#x4EF6;&#x7EBF;&#x7D22;&#x3001;&#x884C;&#x4E1A;/&#x6982;&#x5FF5;&#x5F3A;&#x5EA6;&#x4E0E;&#x9009;&#x80A1;&#x6280;&#x672F;&#x9A8C;&#x8BC1;&#x5206;&#x5F00;&#x5448;&#x73B0;</p></div><div class="page-actions"><span class="data-source-chip local"><i data-lucide="database"></i><span>FFD</span></span><button class="button primary" id="intel-refresh" type="button"><i data-lucide="refresh-cw"></i><span>&#x5237;&#x65B0;</span></button></div></div>
+          <div class="intel-grid">
+            <section class="panel span-7"><div class="panel-header"><div><p class="panel-kicker">&#x4E8B;&#x4EF6;&#x53D1;&#x73B0;</p><h2>&#x5E02;&#x573A;&#x65B0;&#x95FB;&#x6D41;</h2></div><span class="panel-meta" id="intel-news-meta">--</span></div><div class="news-feed" id="market-news"></div></section>
+            <section class="panel span-5"><div class="panel-header"><div><p class="panel-kicker">&#x5F53;&#x65E5;&#x5F3A;&#x5EA6; + 10 &#x65E5;&#x8F6E;&#x52A8;</p><h2>&#x884C;&#x4E1A;&#x8F6E;&#x52A8;</h2></div><span class="panel-meta" id="industry-rotation-meta">--</span></div><div id="industry-rotation"></div></section>
+            <section class="panel span-5"><div class="panel-header"><div><p class="panel-kicker">&#x9898;&#x6750;&#x70ED;&#x5EA6;</p><h2>&#x6982;&#x5FF5;&#x8F6E;&#x52A8;</h2></div><span class="panel-meta" id="concept-rotation-meta">--</span></div><div id="concept-rotation"></div></section>
+            <section class="panel span-7"><div class="panel-header"><div><p class="panel-kicker">&#x51B3;&#x7B56;&#x4F7F;&#x7528;&#x65B9;&#x5F0F;</p><h2>&#x4E8B;&#x4EF6;&#x5230;&#x5019;&#x9009;&#x7684;&#x9A8C;&#x8BC1;&#x94FE;</h2></div></div><ol class="intel-flow"><li><strong>&#x65B0;&#x95FB;&#x7EBF;&#x7D22;</strong><span>FFD &#x8D44;&#x8BAF;&#x53D1;&#x73B0;&#x4E8B;&#x4EF6;&#xFF0C;&#x4FDD;&#x7559;&#x65F6;&#x95F4;&#x3001;&#x5206;&#x7C7B;&#x4E0E;&#x53D1;&#x5E03;&#x65B9;</span></li><li><strong>&#x677F;&#x5757;&#x786E;&#x8BA4;</strong><span>&#x884C;&#x4E1A;&#x548C;&#x6982;&#x5FF5;&#x5F3A;&#x5EA6;&#x6392;&#x5E8F;&#xFF0C;&#x4E0D;&#x4EE5;&#x5355;&#x6761;&#x65B0;&#x95FB;&#x76F4;&#x63A5;&#x4E70;&#x5165;</span></li><li><strong>&#x6280;&#x672F;&#x9A8C;&#x8BC1;</strong><span>&#x56DE;&#x5230;&#x5168;&#x5E02;&#x573A;&#x7B5B;&#x9009;&#xFF0C;&#x4F7F;&#x7528;&#x8D8B;&#x52BF;&#x3001;&#x91CF;&#x4EF7;&#x548C;&#x98CE;&#x9669;&#x95F8;&#x95E8;</span></li></ol></section>
+          </div>
+          <section class="panel rotation-matrix-panel" id="intel-matrix-panel">
+          <div class="panel-header"><div><p class="panel-kicker">&#x901A;&#x8FBE;&#x4FE1;&#x677F;&#x5757;&#x6307;&#x6570; .DAY &#x65E5;&#x7EBF;</p><h2>&#x5168;&#x90E8;&#x677F;&#x5757; 10 &#x65E5;&#x8F6E;&#x52A8;&#x77E9;&#x9635;</h2></div><span class="panel-meta" id="rotation-matrix-meta">--</span></div>
+          <div class="rotation-matrix" id="rotation-matrix"></div>
+          <div class="rotation-summary" id="rotation-summary"></div>
+        </section>
+
+        </section>
+
+        <section class="view-page" id="view-overnight" data-view-page="overnight" aria-labelledby="overnight-title">
+          <div class="page-header">
+            <div><p class="eyebrow">手动添加 · 三面研究</p><h1 id="overnight-title">自选个股研究池</h1><p class="page-subtitle">你负责添加关注股票，系统逐只整理新闻面、技术面和财报面；不自动选股，也不向外推票</p></div>
+            <div class="page-actions"><button class="button secondary" id="research-refresh" type="button"><i data-lucide="refresh-cw"></i><span>刷新列表</span></button><button class="button primary" id="research-analyze-all" type="button"><i data-lucide="scan-search"></i><span>分析全部</span></button></div>
+          </div>
+          <section class="panel research-add-panel" aria-labelledby="research-add-title">
+            <div class="panel-header"><div><p class="panel-kicker">单只添加 / 复制导入</p><h2 id="research-add-title">添加关注股票</h2></div><span class="panel-meta">仅支持沪深主板 · 自动去重</span></div>
+            <form id="research-add-form" class="research-add-form">
+              <label><span>股票代码</span><input name="code" maxlength="6" inputmode="numeric" pattern="\d{6}" required placeholder="例如 600519"></label>
+              <label><span>关注理由</span><input name="note" maxlength="300" placeholder="可选，例如：跟踪新品放量与现金流"></label>
+              <button class="button primary" id="research-add" type="submit"><i data-lucide="plus"></i><span>添加并分析</span></button>
+            </form>
+            <div class="research-import-divider"><span>批量复制导入</span></div>
+            <form id="research-batch-form" class="research-batch-form">
+              <label class="research-batch-text"><span>粘贴股票列表</span><textarea name="text" id="research-batch-text" rows="5" maxlength="50000" required placeholder="直接按 Ctrl+V 粘贴，例如：&#10;600519 贵州茅台&#10;000858 五粮液&#10;002594, 600036&#10;&#10;支持换行、空格、逗号、表格内容和 SH600519 / 600519.SH"></textarea><small id="research-batch-preview">等待粘贴股票代码，单次最多200只</small></label>
+              <div class="research-batch-options">
+                <label><span>统一关注理由</span><input name="note" maxlength="300" placeholder="可选，将应用到本次导入股票"></label>
+                <label class="switch-row research-analyze-switch"><span><strong>导入后立即分析</strong><small>逐只生成新闻面、技术面和财报面，数量多时耗时较长</small></span><input name="analyze" type="checkbox" role="switch"></label>
+                <button class="button primary" id="research-batch-import" type="submit"><i data-lucide="clipboard-paste"></i><span>导入股票</span></button>
+              </div>
+            </form>
+          </section>
+          <div class="metric-grid compact-metrics" id="research-metrics"></div>
+          <div id="research-results" class="research-pool"></div>
+          <div class="risk-note">分析只整理公开数据和技术指标，不构成投资建议；新闻、财报和行情可能存在不同更新时间。</div>
+        </section>
+
+        <section class="view-page" id="view-screener" data-view-page="screener" aria-labelledby="screener-title">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">沪深主板扫描</p>
+              <h1 id="screener-title">策略选股</h1>
+              <p class="page-subtitle" id="screener-subtitle">近10日板块状态 → 沪深主板初筛 → 增量复核 → 次日仅验证候选</p>
+            </div>
+            <div class="page-actions">
+              <div class="segmented" id="screener-mode" aria-label="选股模式">
+                <button type="button" data-mode="technical">规则库综合</button>
+                <button type="button" data-mode="auction">竞价验证</button>
+                <button class="active" type="button" data-mode="dragon">擒龙模式</button>
+              </div>
+              <button class="button primary" id="screener-run" type="button"><i data-lucide="scan-search"></i><span>开始扫描</span></button>
+            </div>
+          </div>
+
+          <div class="metric-grid compact-metrics" id="screener-metrics"></div>
+
+          <section class="panel" aria-labelledby="candidate-table-title">
+            <div class="panel-header toolbar-header">
+              <div><p class="panel-kicker">最新运行</p><h2 id="candidate-table-title">候选列表</h2></div>
+              <div class="table-toolbar">
+                <span class="auction-sync-status" id="auction-sync-status" title="候选池竞价行情每 3 秒同步一次">
+                  <span class="status-dot"></span><span>竞价同步准备中</span>
+                </span>
+                <label class="search-field"><i data-lucide="search"></i><input id="candidate-filter" placeholder="筛选代码、名称或行业" aria-label="筛选候选列表"></label>
+                <select id="candidate-signal-filter" aria-label="按信号筛选">
+                  <option value="">全部信号</option>
+                  <option value="strong">强多</option>
+                  <option value="bullish">偏多</option>
+                  <option value="neutral">中性</option>
+                  <option value="bearish">偏空</option>
+                </select>
+              </div>
+            </div>
+            <div class="table-wrap" id="screener-results"></div>
+          </section>
+        </section>
+
+        <section class="view-page" id="view-oversold" data-view-page="oversold" aria-labelledby="oversold-title">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">新模式 · P0 / R0 · 一波 / 二波</p>
+              <h1 id="oversold-title">超跌反弹结构筛选</h1>
+              <p class="page-subtitle">先进入同花顺强势人气池，再通过成交额、大单净量和 P0 / R0 确认资金启动；只做反弹，不把反弹当反转</p>
+            </div>
+            <div class="page-actions">
+              <span class="status-badge warning">五视频规则 · 待回测</span>
+            </div>
+          </div>
+
+          <section class="panel oversold-filter-panel" aria-labelledby="oversold-filter-title">
+            <div class="panel-header"><div><p class="panel-kicker">人气 + 资金 + 结构</p><h2 id="oversold-filter-title">同花顺人气与资金启动确认</h2></div><span class="panel-meta" id="oversold-as-of">--</span></div>
+            <form class="oversold-form" id="oversold-form">
+              <label><span>最低前期跌幅</span><span class="input-suffix"><input id="oversold-drawdown" type="number" min="5" max="50" step="1" value="12"><em>%</em></span></label>
+              <label><span>突破最低倍量</span><span class="input-suffix"><input id="oversold-volume" type="number" min="1" max="5" step="0.1" value="1.5"><em>倍</em></span></label>
+              <label><span>均线确认</span><select id="oversold-profile"><option value="steady" selected>稳健：站上MA5和MA20</option><option value="basic">基础：站上MA5</option></select></label>
+              <label><span>波段类型</span><select id="oversold-wave"><option value="all" selected>一波 + 二波</option><option value="first">只看一波</option><option value="second">只看二波</option></select></label>
+              <label><span>最低盈亏比</span><span class="input-suffix"><input id="oversold-rr" type="number" min="0.5" max="5" step="0.1" value="1.0"><em>R</em></span></label>
+              <label><span>最低成交额</span><span class="input-suffix"><input id="oversold-amount" type="number" min="0" max="100000" step="1000" value="10000"><em>万元</em></span></label>
+              <label><span>成交额放大</span><span class="input-suffix"><input id="oversold-amount-ratio" type="number" min="1" max="5" step="0.1" value="1.2"><em>倍</em></span></label>
+              <label class="switch-row oversold-switch"><span><strong>只看已触发</strong><small>默认隐藏普通结构观察</small></span><input id="oversold-triggered" type="checkbox" role="switch"></label>
+              <label class="switch-row oversold-switch"><span><strong>服从市场风格</strong><small>非超跌修复占优时不出候选</small></span><input id="oversold-market-filter" type="checkbox" role="switch" checked></label>
+              <label class="switch-row oversold-switch"><span><strong>同花顺人气池</strong><small>非同花顺当日强势人气票不入选</small></span><input id="oversold-ths-hot" type="checkbox" role="switch"></label>
+              <label class="switch-row oversold-switch"><span><strong>大单净量为正</strong><small>过滤放量但资金净流出的股票</small></span><input id="oversold-positive-dde" type="checkbox" role="switch"></label>
+              <button class="button primary" id="oversold-run" type="submit"><i data-lucide="scan-search"></i><span>开始筛选</span></button>
+            </form>
+          </section>
+
+          <div class="metric-grid compact-metrics" id="oversold-metrics"></div>
+          <section class="oversold-style-card" id="oversold-market-style" aria-live="polite"></section>
+
+          <div class="oversold-grid">
+            <section class="panel span-8" aria-labelledby="oversold-results-title">
+              <div class="panel-header"><div><p class="panel-kicker">同花顺人气、资金启动、结构触发三重过滤</p><h2 id="oversold-results-title">资金启动候选</h2></div><span class="panel-meta" id="oversold-result-meta">--</span></div>
+              <div class="table-wrap" id="oversold-results"></div>
+            </section>
+            <section class="panel span-4" aria-labelledby="oversold-method-title">
+              <div class="panel-header"><div><p class="panel-kicker">五视频规则</p><h2 id="oversold-method-title">证据链与否决项</h2></div></div>
+              <ol class="method-list" id="oversold-method"></ol>
+              <div class="panel-header" style="margin-top:12px"><div><p class="panel-kicker">本次扫描</p><h2 id="oversold-veto-title">否决分布</h2></div></div>
+              <ol class="method-list" id="oversold-vetoes"></ol>
+              <div class="risk-note" id="oversold-risk-note"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-page" id="view-yijiner" data-view-page="yijiner" aria-labelledby="yijiner-title">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">竞价爆量 · 二板评分卡</p>
+              <h1 id="yijiner-title">一进二工作台</h1>
+              <p class="page-subtitle">昨日沪深主板首板 ∩ 今日竞价爆量分层（S≥10% / A≥7% / B≥5% / C≥3%）+ 加权评分卡；炸板次数、首板时间、题材来自 FFD 涨停池，封单额暂无数据源</p>
+            </div>
+            <div class="page-actions">
+              <span class="status-badge warning">战法总结经验参数 · 待回测</span>
+              <button class="button primary" id="yijiner-run" type="button"><i data-lucide="scan-search"></i><span>运行扫描</span></button>
+            </div>
+          </div>
+
+          <div class="metric-grid compact-metrics" id="yijiner-metrics"></div>
+          <section class="oversold-style-card" id="yijiner-market-state" aria-live="polite"></section>
+
+          <div class="oversold-grid">
+            <section class="panel span-8" aria-labelledby="yijiner-results-title">
+              <div class="panel-header"><div><p class="panel-kicker">首板池 ∩ 竞价爆量 ∩ 评分卡加权</p><h2 id="yijiner-results-title">一进二候选</h2></div><span class="panel-meta" id="yijiner-result-meta">--</span></div>
+              <div class="table-wrap" id="yijiner-results"></div>
+            </section>
+            <section class="panel span-4" aria-labelledby="yijiner-method-title">
+              <div class="panel-header"><div><p class="panel-kicker">战法规则</p><h2 id="yijiner-method-title">评分卡与方法论</h2></div></div>
+              <ol class="method-list" id="yijiner-method"></ol>
+              <div class="risk-note" id="yijiner-risk-note"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-page" id="view-dixi" data-view-page="dixi" aria-labelledby="dixi-title">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">趋势低吸 · 回调反包 · 人气强票</p>
+              <h1 id="dixi-title">低吸计划（素衣模式）</h1>
+              <p class="page-subtitle">只做上升趋势中期 + 成交额市场前 100 的强票；回调 ≤5 日、最多第三次回调，在均线附近等反包阳线；前一晚做计划，次日按计划执行</p>
+            </div>
+            <div class="page-actions">
+              <span class="status-badge warning">战法公开拆解 · 待回测</span>
+              <button class="button secondary" id="dixi-auction" type="button"><i data-lucide="gauge"></i><span>竞价验证</span></button>
+              <button class="button primary" id="dixi-run" type="button"><i data-lucide="scan-search"></i><span>生成计划</span></button>
+            </div>
+          </div>
+
+          <div class="metric-grid compact-metrics" id="dixi-metrics"></div>
+          <section class="oversold-style-card" id="dixi-market-state" aria-live="polite"></section>
+
+          <section class="panel" id="dixi-auction-panel" aria-labelledby="dixi-auction-title" hidden>
+            <div class="panel-header"><div><p class="panel-kicker">素衣纪律 · 符合昨晚思路才执行</p><h2 id="dixi-auction-title">今日竞价验证</h2></div><span class="panel-meta" id="dixi-auction-meta">--</span></div>
+            <div class="table-wrap" id="dixi-auction-results"></div>
+          </section>
+
+          <div class="oversold-grid">
+            <section class="panel span-8" aria-labelledby="dixi-results-title">
+              <div class="panel-header"><div><p class="panel-kicker">趋势门槛 ∩ 股性活跃 ∩ 回调结构</p><h2 id="dixi-results-title">次日低吸观察池</h2></div><span class="panel-meta" id="dixi-result-meta">--</span></div>
+              <div class="table-wrap" id="dixi-results"></div>
+            </section>
+            <section class="panel span-4" aria-labelledby="dixi-method-title">
+              <div class="panel-header"><div><p class="panel-kicker">素衣不染尘 · 淘股吧总冠军</p><h2 id="dixi-method-title">模式纪律</h2></div></div>
+              <ol class="method-list" id="dixi-method"></ol>
+              <div class="risk-note" id="dixi-risk-note"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-page" id="view-maifu" data-view-page="maifu" aria-labelledby="maifu-title">
+          <div class="page-header">
+            <div>
+              <p class="eyebrow">事件日历 · 大热股映射 · 热议快讯</p>
+              <h1 id="maifu-title">埋伏挖掘</h1>
+              <p class="page-subtitle">在事件发酵前低位埋伏：固定日历事件提前 20~40 天关注受益行业，看连板梯队里最热的大热股挖 A 股映射，每天扫热议快讯发现即挖票</p>
+            </div>
+            <div class="page-actions">
+              <span class="status-badge warning">历史规律总结 · 待验证</span>
+              <button class="button primary" id="maifu-run" type="button"><i data-lucide="refresh-cw"></i><span>刷新总览</span></button>
+            </div>
+          </div>
+
+          <div class="metric-grid compact-metrics" id="maifu-metrics"></div>
+
+          <div class="oversold-grid">
+            <section class="panel span-12" aria-labelledby="maifu-events-title">
+              <div class="panel-header"><div><p class="panel-kicker">固定会议 / 节日 / 事件 · 提前埋伏窗口</p><h2 id="maifu-events-title">全年事件日历</h2></div><span class="panel-meta" id="maifu-events-meta">--</span></div>
+              <div class="table-wrap" id="maifu-events"></div>
+            </section>
+          </div>
+
+          <div class="oversold-grid">
+            <section class="panel span-4" aria-labelledby="maifu-hot-title">
+              <div class="panel-header"><div><p class="panel-kicker">连板梯队 · 大热股映射</p><h2 id="maifu-hot-title">大热股与题材</h2></div><span class="panel-meta" id="maifu-hot-meta">--</span></div>
+              <div class="table-wrap" id="maifu-hot"></div>
+            </section>
+            <section class="panel span-8 maifu-news-panel" aria-labelledby="maifu-news-title">
+              <div class="maifu-news-header">
+                <div class="maifu-news-heading"><p class="panel-kicker">全球新闻事件 · 跟踪兑现结果</p><h2 id="maifu-news-title">事件跟踪</h2></div>
+                <div class="maifu-news-tabs" id="maifu-news-tabs" role="tablist" aria-label="快讯筛选">
+                  <button class="active" type="button" data-maifu-news-filter="all">全部事件</button>
+                  <button type="button" data-maifu-news-filter="realized">已兑现</button>
+                  <button type="button" data-maifu-news-filter="unrealized">未兑现</button>
+                  <button type="button" data-maifu-news-filter="pending">待验证</button>
+                </div>
+                <div class="maifu-news-spacer"></div>
+                <div class="maifu-news-source-stats" id="maifu-news-source-stats" aria-label="新闻源状态"></div>
+                <label class="maifu-news-search"><i data-lucide="search" aria-hidden="true"></i><input id="maifu-news-search" type="search" placeholder="搜索事件关键词…" aria-label="搜索事件关键词"></label>
+                <span class="panel-meta" id="maifu-news-meta">--</span>
+                <button class="icon-button" id="maifu-news-refresh" type="button" aria-label="刷新快讯" data-tooltip="刷新快讯"><i data-lucide="refresh-cw"></i></button>
+              </div>
+              <div class="maifu-news-list" id="maifu-news"></div>
+            </section>
+          </div>
+
+          <div class="oversold-grid">
+            <section class="panel span-12" aria-labelledby="maifu-method-title">
+              <div class="panel-header"><div><p class="panel-kicker">埋伏纪律</p><h2 id="maifu-method-title">方法论与风控</h2></div></div>
+              <ol class="method-list" id="maifu-method"></ol>
+              <div class="risk-note" id="maifu-risk-note"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-page" id="view-stock" data-view-page="stock" aria-labelledby="stock-title">
+          <div class="page-header stock-page-header">
+            <div>
+              <p class="eyebrow">个股研究</p>
+              <h1 id="stock-title">个股分析</h1>
+              <p class="page-subtitle" id="stock-subtitle">输入股票代码以加载行情与策略分析</p>
+            </div>
+            <form class="stock-loader" id="stock-loader-form">
+              <label class="search-field"><i data-lucide="search"></i><input id="stock-code" value="002354" maxlength="6" inputmode="numeric" aria-label="股票代码"></label>
+              <button class="button primary" type="submit"><i data-lucide="line-chart"></i><span>分析</span></button>
+            </form>
+          </div>
+
+          <div class="segmented page-tabs" id="stock-tabs" aria-label="个股分析视图">
+            <button class="active" type="button" data-stock-tab="analysis">行情与规则库综合</button>
+            <button type="button" data-stock-tab="deep">30 日深度分析</button>
+          </div>
+
+          <div id="stock-analysis-tab">
+            <section class="quote-band" id="stock-quote"></section>
+            <div class="stock-grid">
+              <section class="panel span-8" aria-labelledby="price-chart-title">
+                <div class="panel-header">
+                  <div><p class="panel-kicker">日 K 数据</p><h2 id="price-chart-title">价格与成交量</h2></div>
+                  <span class="panel-meta" id="chart-range">--</span>
+                </div>
+                <div class="chart-shell">
+                  <canvas id="stock-chart" height="360" aria-label="股票价格 K 线图"></canvas>
+                  <div class="chart-tooltip" id="chart-tooltip" hidden></div>
+                </div>
+              </section>
+              <section class="panel span-4" aria-labelledby="stock-signal-title">
+                <div class="panel-header"><div><p class="panel-kicker">综合判断</p><h2 id="stock-signal-title">当前信号</h2></div></div>
+                <div id="stock-signal"></div>
+              </section>
+              <section class="panel span-12" aria-labelledby="score-breakdown-title">
+                <div class="panel-header"><div><p class="panel-kicker">规则库证据</p><h2 id="score-breakdown-title">规则库综合拆解</h2></div><span class="panel-meta" id="score-version">--</span></div>
+                <div id="stock-score-breakdown"></div>
+              </section>
+            </div>
+          </div>
+
+          <div id="stock-deep-tab" hidden>
+            <div class="stock-grid">
+              <section class="panel span-8" aria-labelledby="force-timeline-title">
+                <div class="panel-header"><div><p class="panel-kicker">30 日路径</p><h2 id="force-timeline-title">主力轨迹</h2></div><span class="panel-meta" id="deep-period">--</span></div>
+                <div id="force-timeline"></div>
+              </section>
+              <section class="panel span-4" aria-labelledby="deep-conclusion-title">
+                <div class="panel-header"><div><p class="panel-kicker">模型结论</p><h2 id="deep-conclusion-title">方向与条件</h2></div></div>
+                <div id="deep-conclusion"></div>
+              </section>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-page" id="view-review" data-view-page="review" aria-labelledby="review-title">
+          <div class="page-header">
+            <div><p class="eyebrow">15:01 自动复盘</p><h1 id="review-title">每日复盘</h1><p class="page-subtitle">核对推送表现、漏选原因和市场环境</p></div>
+            <div class="page-actions"><span class="status-badge neutral" id="review-status">等待数据</span></div>
+          </div>
+          <div class="metric-grid" id="review-metrics"></div>
+          <div class="review-grid">
+            <section class="panel span-8" aria-labelledby="review-table-title">
+              <div class="panel-header"><div><p class="panel-kicker">今日记录</p><h2 id="review-table-title">推送表现</h2></div><span class="panel-meta" id="review-date">--</span></div>
+              <div class="table-wrap" id="review-table"></div>
+            </section>
+            <section class="panel span-4" aria-labelledby="review-diagnosis-title">
+              <div class="panel-header"><div><p class="panel-kicker">策略复核</p><h2 id="review-diagnosis-title">诊断与建议</h2></div></div>
+              <div id="review-diagnosis"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-page" id="view-backtest" data-view-page="backtest" aria-labelledby="backtest-title">
+          <div class="page-header">
+            <div><p class="eyebrow">历史检验</p><h1 id="backtest-title">策略回测</h1><p class="page-subtitle">追踪推荐后总涨跌、7 日最佳与命中率</p></div>
+            <div class="page-actions">
+              <label class="compact-field"><span>开始</span><input type="date" id="backtest-from"></label>
+              <label class="compact-field"><span>结束</span><input type="date" id="backtest-to"></label>
+              <button class="button primary" id="backtest-run" type="button"><i data-lucide="play"></i><span>运行回测</span></button>
+            </div>
+          </div>
+          <div class="metric-grid" id="backtest-metrics"></div>
+          <section class="panel" aria-labelledby="backtest-table-title">
+            <div class="panel-header"><div><p class="panel-kicker">逐日明细</p><h2 id="backtest-table-title">历史推荐结果</h2></div><span class="panel-meta" id="backtest-meta">--</span></div>
+            <div class="table-wrap" id="backtest-table"></div>
+          </section>
+        </section>
+
+        <section class="view-page" id="view-automation" data-view-page="automation" aria-labelledby="automation-title">
+          <div class="page-header">
+            <div><p class="eyebrow">定时与投递</p><h1 id="automation-title">自动化中心</h1><p class="page-subtitle">管理早盘、复盘任务与企业微信消息</p></div>
+          </div>
+          <div class="automation-grid">
+            <section class="panel span-8" aria-labelledby="jobs-title">
+              <div class="panel-header"><div><p class="panel-kicker">任务计划</p><h2 id="jobs-title">定时任务</h2></div><span class="panel-meta" id="jobs-meta">--</span></div>
+              <div id="jobs-list"></div>
+            </section>
+            <section class="panel span-4" aria-labelledby="command-title">
+              <div class="panel-header"><div><p class="panel-kicker">机器人</p><h2 id="command-title">命令与投递</h2></div></div>
+              <form id="bot-command-form" class="stack-form">
+                <label><span>命令</span><input id="bot-command" value="选好票" autocomplete="off"></label>
+                <button class="button primary full" type="submit"><i data-lucide="send"></i><span>发送命令</span></button>
+              </form>
+              <div class="message-output" id="bot-command-result"></div>
+            </section>
+            <section class="panel span-12" aria-labelledby="message-test-title">
+              <div class="panel-header"><div><p class="panel-kicker">渠道检查</p><h2 id="message-test-title">消息测试</h2></div></div>
+              <form class="inline-form" id="message-test-form">
+                <label><span>渠道</span><input value="企业微信群机器人" disabled></label>
+                <label class="grow"><span>测试内容</span><input id="message-content" value="寻龙工作台消息通道测试"></label>
+                <button class="button secondary" type="submit"><i data-lucide="radio"></i><span>测试发送</span></button>
+              </form>
+              <div id="message-test-result"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view-page" id="view-settings" data-view-page="settings" aria-labelledby="settings-title">
+          <div class="page-header">
+            <div><p class="eyebrow">系统配置</p><h1 id="settings-title">设置</h1><p class="page-subtitle">调整研究参数、消息渠道与数据源</p></div>
+            <div class="page-actions"><button class="button primary" id="settings-save" type="button"><i data-lucide="save"></i><span>保存设置</span></button></div>
+          </div>
+          <div class="settings-grid">
+            <section class="panel span-7" aria-labelledby="strategy-settings-title">
+              <div class="panel-header"><div><p class="panel-kicker">策略参数</p><h2 id="strategy-settings-title">筛选与风险</h2></div></div>
+              <form class="settings-form" id="settings-form">
+                <label><span>规则库综合门槛</span><input name="rulebook_threshold" type="number" min="0" max="100" step="1" inputmode="decimal"></label>
+                <input name="technical_threshold" type="hidden" aria-hidden="true">
+                <label><span>规则库推送门槛</span><input name="rulebook_push_threshold" type="number" min="0" max="100" step="1" inputmode="decimal"></label>
+                <input name="auction_threshold" type="hidden" aria-hidden="true" value="60">
+                <label><span>单次扫描上限</span><input name="scan_limit" type="number" min="12" max="240"></label>
+                <label><span>规则库版本</span><input name="strategy_version" type="text"></label>
+                <label class="full-field"><span>企业微信 Webhook</span><input name="wecom_webhook" type="password" autocomplete="new-password" placeholder="已配置时保持空白即可"></label>
+                <label class="switch-row full-field"><span><strong>清除企业微信 Webhook</strong><small>保存后停止所有企业微信投递</small></span><input name="clear_wecom_webhook" type="checkbox" role="switch"></label>
+                <label class="switch-row full-field"><span><strong>自动任务调度</strong><small>按计划执行规则库综合、事件确认、复盘与数据刷新</small></span><input name="auto_scheduler" type="checkbox" role="switch"></label>
+              </form>
+            </section>
+            <section class="panel span-5" aria-labelledby="sources-title">
+              <div class="panel-header"><div><p class="panel-kicker">健康检查</p><h2 id="sources-title">数据源</h2></div><button class="icon-button" id="sources-refresh" type="button" aria-label="刷新数据源" data-tooltip="刷新数据源"><i data-lucide="refresh-cw"></i></button></div>
+              <div id="data-sources"></div>
+            </section>
+          </div>
+        </section>
+      </div>
+
+      <footer class="risk-footer"><i data-lucide="shield-alert"></i><span>本系统仅用于数据研究与策略复盘，不构成任何投资建议。</span></footer>
+    </main>
+
+    <nav class="mobile-nav" aria-label="移动端导航">
+      <button class="active" type="button" data-view="overview"><i data-lucide="layout-dashboard"></i><span>总览</span></button>
+      <button type="button" data-view="screener"><i data-lucide="list-filter"></i><span>选股</span></button>
+      <button type="button" data-view="stock"><i data-lucide="candlestick-chart"></i><span>个股</span></button>
+      <button type="button" data-view="review"><i data-lucide="clipboard-check"></i><span>复盘</span></button>
+      <button type="button" id="mobile-more"><i data-lucide="menu"></i><span>更多</span></button>
+    </nav>
+  </div>
+
+  <div class="toast-region" id="toast-region" aria-live="polite" aria-atomic="true"></div>
+</body>
+</html>
